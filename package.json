@@ -1,0 +1,17 @@
+{
+  "name": "youtubebot",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "CLI for finding low-subscriber, high-view YouTube outlier videos.",
+  "bin": {
+    "youtubebot": "./src/cli.js"
+  },
+  "scripts": {
+    "find": "node src/cli.js find",
+    "env": "node src/cli.js env",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
+  }
+}
