@@ -16,6 +16,11 @@ doc_tags:
 
 CLI for finding YouTube inspiration videos where a low-subscriber channel has a high-performing video.
 
+## Related Bots
+
+- TikTok counterpart: [`tiktokbot`](https://github.com/georgewangyu/tiktokbot) now supports TikTok Display API OAuth for George-owned account analytics, including recent-video pulls and own-account outlier ranking.
+- The important platform difference: YouTube broad discovery is self-serve through YouTube Data API, while TikTok broad organic discovery remains gated behind Research API approval. `tiktokbot` uses Display API for authorized account data and manual/watchlist scoring for competitor research.
+
 The scoring model combines the useful parts of the inspected inspiration projects:
 
 - `open-outlier`: true channel-baseline multiplier
