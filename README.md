@@ -16,6 +16,12 @@ doc_tags:
 
 CLI for finding YouTube inspiration videos where a low-subscriber channel has a high-performing video.
 
+## Status
+
+This repo is runnable today for public research. OAuth scaffolding exists for
+future account-backed actions, but public outlier discovery is the current
+first-class path.
+
 ## Related Bots
 
 - TikTok counterpart: [`tiktokbot`](https://github.com/georgewangyu/tiktokbot) now supports TikTok Display API OAuth for George-owned account analytics, including recent-video pulls and own-account outlier ranking.
@@ -51,6 +57,13 @@ youtubebot/
 
 ```bash
 npm install
+```
+
+## Validation
+
+```bash
+npm run env
+npm test
 ```
 
 ## Credentials
@@ -159,3 +172,9 @@ Default ranking uses `outlier_score` when enough recent uploads are available. I
 - `--require-baseline` removes weak subscriber-ratio-only rows.
 - This repo is YouTube-only for now. TikTok/Instagram should use the same scorer with platform-specific collector adapters.
 - OAuth is scaffolded for future upload/publishing features, but this version does not upload videos yet.
+
+## Goals
+
+- Keep breakout ranking explainable and inspectable.
+- Preserve public research as the default path.
+- Add future account actions only when they support the outlier-finding thesis.
