@@ -1,17 +1,3 @@
----
-doc_schema: "doc-frontmatter-v1"
-doc_id: "youtubebot/README"
-doc_type: "readme"
-doc_status: "active"
-title: "youtubebot - YouTube Outlier Finder"
-description: "CLI for finding low-subscriber, high-view YouTube videos using channel-baseline and subscriber-ratio scoring."
-memory_eligible: false
-memory_priority: "low"
-doc_tags:
-  - "domain:social-media"
-  - "tool:youtubebot"
-  - "type:readme"
----
 # youtubebot - YouTube Outlier Finder
 
 CLI for finding YouTube inspiration videos where a low-subscriber channel has a high-performing video.
@@ -24,7 +10,7 @@ first-class path.
 
 ## Related Bots
 
-- TikTok counterpart: [`tiktokbot`](https://github.com/georgewangyu/tiktokbot) now supports TikTok Display API OAuth for George-owned account analytics, including recent-video pulls and own-account outlier ranking.
+- TikTok counterpart: `tiktokbot` supports TikTok Display API OAuth for owned-account analytics, including recent-video pulls and own-account outlier ranking.
 - The important platform difference: YouTube broad discovery is self-serve through YouTube Data API, while TikTok broad organic discovery remains gated behind Research API approval. `tiktokbot` uses Display API for authorized account data and manual/watchlist scoring for competitor research.
 
 The scoring model combines the useful parts of the inspected inspiration projects:
