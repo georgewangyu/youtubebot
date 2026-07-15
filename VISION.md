@@ -14,11 +14,13 @@ automation.
 
 - Keep public research as the first-class path.
 - Preserve channel-baseline outlier scoring before subscriber-ratio fallback.
-- Make OAuth scaffolding clearly future-facing, not a hidden upload product.
+- Keep a narrow, explicit OAuth upload lane for finished videos without turning
+  the repo into a general creator-management suite.
 - Emit outputs that agents can inspect, save, and compare.
 
 ## Non-Goals
 
-- Do not add account actions unless they support the outlier-finding thesis.
+- Do not expand account actions beyond finished-video upload and explicit
+  authorized-channel identity checks.
 - Do not collapse YouTube, TikTok, and Instagram into one vague collector.
 - Do not hide weak baseline data behind confident rankings.

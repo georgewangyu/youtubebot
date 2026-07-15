@@ -25,6 +25,7 @@ Add these to `youtubebot/.env`, `~/.config/youtubebot/.env`, or a file reference
 YOUTUBE_CLIENT_ID=...
 YOUTUBE_CLIENT_SECRET=...
 YOUTUBE_REDIRECT_URI=http://localhost
+YOUTUBE_EXPECTED_CHANNEL_ID=YOUR_CHANNEL_ID
 ```
 
 ## Authorize
@@ -62,4 +63,12 @@ https://www.googleapis.com/auth/youtube.readonly
 https://www.googleapis.com/auth/youtube.upload
 ```
 
-The upload scope is included now so the saved refresh token can support future upload commands. The CLI does not upload videos yet.
+The upload scope supports the current resumable uploader. If saved credentials
+become invalid, run `node src/cli.js oauth-login`, complete authorization in the
+browser, and paste the callback URL or code when prompted. Uploads default to
+private visibility; unlisted/public uploads require `--confirm-release`.
+
+When authorizing a Brand Account, Google may display an older Brand Account
+name. Keep `YOUTUBE_EXPECTED_CHANNEL_ID` set so the CLI verifies the immutable
+channel ID before saving credentials or starting an upload. Store the real ID
+only in an ignored local `.env` or another private configuration source.

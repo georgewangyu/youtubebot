@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildAuthorizationUrl, DEFAULT_SCOPES } from '../src/oauth.js';
+import { buildAuthorizationUrl, DEFAULT_SCOPES, parseOAuthCallbackInput } from '../src/oauth.js';
 
 test('buildAuthorizationUrl includes offline upload consent params', () => {
     const { url, state, scopes } = buildAuthorizationUrl({
@@ -19,4 +19,12 @@ test('buildAuthorizationUrl includes offline upload consent params', () => {
     assert.equal(state, 'state-123');
     assert.deepEqual(scopes, DEFAULT_SCOPES);
     assert.match(parsed.searchParams.get('scope'), /youtube\.upload/);
+});
+
+test('parseOAuthCallbackInput accepts callback URLs and raw codes', () => {
+    assert.deepEqual(
+        parseOAuthCallbackInput('http://localhost/?code=abc123&state=state-123'),
+        { code: 'abc123', state: 'state-123', error: '', errorDescription: '' },
+    );
+    assert.equal(parseOAuthCallbackInput('raw-code').code, 'raw-code');
 });

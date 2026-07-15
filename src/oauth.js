@@ -32,6 +32,22 @@ export function buildAuthorizationUrl({
     return { url: url.toString(), state: resolvedState, scopes };
 }
 
+export function parseOAuthCallbackInput(input) {
+    const value = String(input || '').trim();
+    if (!value) return { code: '', state: '', error: '', errorDescription: '' };
+    try {
+        const url = new URL(value);
+        return {
+            code: url.searchParams.get('code') || '',
+            state: url.searchParams.get('state') || '',
+            error: url.searchParams.get('error') || '',
+            errorDescription: url.searchParams.get('error_description') || '',
+        };
+    } catch {
+        return { code: value, state: '', error: '', errorDescription: '' };
+    }
+}
+
 export async function exchangeCodeForToken({ clientId, clientSecret, redirectUri, code }) {
     if (!clientId) throw new Error('Missing credentials: YOUTUBE_CLIENT_ID');
     if (!clientSecret) throw new Error('Missing credentials: YOUTUBE_CLIENT_SECRET');

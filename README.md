@@ -4,9 +4,9 @@ CLI for finding YouTube inspiration videos where a low-subscriber channel has a 
 
 ## Status
 
-This repo is runnable today for public research. OAuth scaffolding exists for
-future account-backed actions, but public outlier discovery is the current
-first-class path.
+This repo is runnable today for public research and OAuth-backed video uploads.
+Public outlier discovery remains the first-class research path; uploads use a
+separate, explicit resumable workflow that defaults to private visibility.
 
 ## Related Bots
 
@@ -30,6 +30,7 @@ youtubebot/
 |   |-- oauth.js         # Google OAuth URL and token helpers
 |   |-- output.js        # Table/JSON/JSONL output
 |   |-- scoring.js       # Baseline, multiplier, velocity scoring
+|   |-- upload.js        # Resumable YouTube video upload implementation
 |   `-- youtube.js       # YouTube Data API client
 |-- setup/
 |   `-- YOUTUBE_API_SETUP.md
@@ -75,7 +76,7 @@ Check config:
 node src/cli.js env
 ```
 
-### OAuth For Future Account Actions
+### OAuth For Account Actions
 
 OAuth is required for account-backed actions such as uploads. Add:
 
@@ -84,6 +85,7 @@ YOUTUBE_CLIENT_ID=...
 YOUTUBE_CLIENT_SECRET=...
 YOUTUBE_REDIRECT_URI=http://localhost
 YOUTUBE_REFRESH_TOKEN=...
+YOUTUBE_EXPECTED_CHANNEL_ID=YOUR_CHANNEL_ID
 ```
 
 Generate a consent URL:
@@ -103,6 +105,62 @@ Verify the authenticated channel:
 ```bash
 node src/cli.js me
 ```
+
+If the saved refresh token is invalid, use the guided browser flow. It opens
+Google authorization with both readonly and upload scopes, accepts the callback
+URL or code, and saves tokens without printing them:
+
+```bash
+node src/cli.js oauth-login
+```
+
+`YOUTUBE_EXPECTED_CHANNEL_ID` is a safety lock. OAuth login, `me`, and real
+uploads refuse to continue if Google authorizes a different primary or Brand
+Account. Keep the real ID only in an ignored local `.env` or another private
+configuration source; do not add account handles or IDs to this repository.
+
+## Uploading Videos
+
+Validate a private upload without creating anything on YouTube:
+
+```bash
+node src/cli.js upload ./final-video.mp4 \
+  --title 'Video title' \
+  --description 'Video description' \
+  --tags 'ai,workflow' \
+  --dry-run
+```
+
+Upload privately through YouTube's resumable upload protocol:
+
+```bash
+node src/cli.js upload ./final-video.mp4 \
+  --title 'Video title' \
+  --description 'Video description' \
+  --tags 'ai,workflow' \
+  --privacy private
+```
+
+Unlisted or public visibility requires explicit approval of the exact video
+and metadata:
+
+```bash
+node src/cli.js upload ./final-video.mp4 \
+  --title 'Approved video title' \
+  --privacy unlisted \
+  --confirm-release
+```
+
+The uploader supports MP4, MOV, WebM, MKV, AVI, and MPEG-style files, sends
+8 MiB resumable chunks by default, and returns the created video ID and watch
+URL. Useful metadata options include `--category-id`, `--made-for-kids`,
+`--contains-synthetic-media`, and `--publish-at`. Scheduled uploads must begin
+as private.
+
+Google restricts uploads from unverified API projects created after July 28,
+2020 to private viewing until the project passes a YouTube API compliance
+audit. The browser/YouTube Studio remains the practical fallback for native
+finishing or public release when that restriction applies.
 
 ## Usage
 
@@ -157,7 +215,8 @@ Default ranking uses `outlier_score` when enough recent uploads are available. I
 - Default minimum baseline count is 3 videos.
 - `--require-baseline` removes weak subscriber-ratio-only rows.
 - This repo is YouTube-only for now. TikTok/Instagram should use the same scorer with platform-specific collector adapters.
-- OAuth is scaffolded for future upload/publishing features, but this version does not upload videos yet.
+- OAuth-backed uploads use YouTube's resumable `videos.insert` flow and default
+  to private visibility.
 
 ## Goals
 

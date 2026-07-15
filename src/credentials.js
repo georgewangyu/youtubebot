@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -44,6 +44,11 @@ export function getEnv(key) {
     return process.env[key] || getFileVars()[key] || '';
 }
 
+export function getDefaultEnvFilePath() {
+    const dir = fileURLToPath(new URL('.', import.meta.url));
+    return resolve(dir, '..', '.env');
+}
+
 export function getYouTubeApiKey() {
     return getEnv('YOUTUBE_API_KEY') || getEnv('YOUTUBE_DATA_API_KEY') || getEnv('GOOGLE_API_KEY');
 }
@@ -76,4 +81,34 @@ export function requireYouTubeApiKey() {
         throw new Error('Missing credentials: set YOUTUBE_API_KEY in youtubebot/.env, ~/.config/youtubebot/.env, YOUTUBEBOT_ENV_FILE, or the shell');
     }
     return apiKey;
+}
+
+export function writeEnvValues(filePath, values) {
+    const target = filePath || getDefaultEnvFilePath();
+    const existing = existsSync(target) ? readFileSync(target, 'utf8') : '';
+    const lines = existing ? existing.split('\n') : [];
+    const pending = new Map(Object.entries(values).filter(([, value]) => value !== undefined && value !== null && value !== ''));
+    const output = lines.map((line) => {
+        const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=/);
+        if (!match || !pending.has(match[1])) return line;
+        const key = match[1];
+        const value = pending.get(key);
+        pending.delete(key);
+        return `${key}=${escapeEnvValue(value)}`;
+    });
+
+    if (output.length && output.at(-1) !== '') output.push('');
+    for (const [key, value] of pending) {
+        output.push(`${key}=${escapeEnvValue(value)}`);
+    }
+
+    writeFileSync(target, output.join('\n').replace(/\n*$/, '\n'));
+    fileVars = null;
+    return target;
+}
+
+function escapeEnvValue(value) {
+    const text = String(value);
+    if (!text || /[\s"'#]/.test(text)) return JSON.stringify(text);
+    return text;
 }
