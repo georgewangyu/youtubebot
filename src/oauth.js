@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 export const DEFAULT_SCOPES = [
     'https://www.googleapis.com/auth/youtube.readonly',
     'https://www.googleapis.com/auth/youtube.upload',
+    'https://www.googleapis.com/auth/youtube.force-ssl',
 ];
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -28,6 +29,7 @@ export function buildAuthorizationUrl({
     url.searchParams.set('state', resolvedState);
     url.searchParams.set('access_type', accessType);
     url.searchParams.set('prompt', prompt);
+    url.searchParams.set('include_granted_scopes', 'true');
 
     return { url: url.toString(), state: resolvedState, scopes };
 }

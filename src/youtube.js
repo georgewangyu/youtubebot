@@ -16,15 +16,16 @@ function unique(values) {
 }
 
 export class YouTubeClient {
-    constructor({ apiKey, accessToken } = {}) {
-        this.apiKey = apiKey || getYouTubeApiKey();
+    constructor({ apiKey, accessToken, fetchImpl = globalThis.fetch } = {}) {
         this.accessToken = accessToken || '';
+        this.apiKey = apiKey ?? (this.accessToken ? '' : getYouTubeApiKey());
+        this.fetchImpl = fetchImpl;
         if (!this.apiKey && !this.accessToken) {
             throw new Error('Missing credentials: set YOUTUBE_API_KEY for public reads or YOUTUBE_ACCESS_TOKEN for OAuth reads');
         }
     }
 
-    async request(resource, params = {}) {
+    async request(resource, params = {}, { method = 'GET', body } = {}) {
         const url = new URL(`${API_ROOT}/${resource}`);
         const requestParams = this.apiKey ? { ...params, key: this.apiKey } : params;
         for (const [key, value] of Object.entries(requestParams)) {
@@ -36,14 +37,38 @@ export class YouTubeClient {
         if (this.accessToken) {
             headers.Authorization = `Bearer ${this.accessToken}`;
         }
+        if (body !== undefined) headers['Content-Type'] = 'application/json; charset=UTF-8';
 
-        const response = await fetch(url, { headers });
+        const response = await this.fetchImpl(url, {
+            method,
+            headers,
+            ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+        });
         const json = await response.json().catch(() => ({}));
         if (!response.ok) {
             const message = json?.error?.message || `${response.status} ${response.statusText}`;
             throw new Error(`YouTube API error for ${resource}: ${message}`);
         }
         return json;
+    }
+
+    async fetchVideo(videoId, { part = 'snippet,status' } = {}) {
+        const page = await this.request('videos', {
+            part,
+            id: videoId,
+            maxResults: 1,
+        });
+        return page.items?.[0] || null;
+    }
+
+    async updateVideoStatus(videoResource) {
+        if (!videoResource?.id || !videoResource?.status) {
+            throw new Error('YouTube status updates require a video resource with id and status.');
+        }
+        return this.request('videos', { part: 'status' }, {
+            method: 'PUT',
+            body: videoResource,
+        });
     }
 
     async fetchMyChannels() {

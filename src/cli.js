@@ -10,6 +10,7 @@ import { findOutliers } from './finder.js';
 import { buildAuthorizationUrl, DEFAULT_SCOPES, exchangeCodeForToken, parseOAuthCallbackInput, refreshAccessToken } from './oauth.js';
 import { printResults } from './output.js';
 import { buildYouTubeVideoResource, inspectYouTubeVideoFile, uploadYouTubeVideo } from './upload.js';
+import { buildYouTubeStatusUpdate } from './video-status.js';
 import { YouTubeClient } from './youtube.js';
 
 const program = new Command();
@@ -315,6 +316,65 @@ program
             }, null, 2));
         } catch (error) {
             console.error(`Error: ${error.message}`);
+            process.exit(1);
+        }
+    });
+
+program
+    .command('set-visibility <video-id>')
+    .description('Change an existing video privacy status through videos.update')
+    .requiredOption('--privacy <status>', 'private, unlisted, or public')
+    .option('--confirm-release', 'Confirm an unlisted/public release was explicitly approved')
+    .option('--dry-run', 'Fetch and validate the video without changing it')
+    .action(async (videoId, options) => {
+        try {
+            const accessToken = await getOAuthAccessToken();
+            const { channel } = await verifyOAuthChannel(accessToken);
+            const client = new YouTubeClient({ accessToken });
+            const video = await client.fetchVideo(videoId, { part: 'snippet,status' });
+            if (!video) throw new Error(`YouTube video not found: ${videoId}`);
+            if (video.snippet?.channelId !== channel.id) {
+                throw new Error(`Video ${videoId} belongs to channel ${video.snippet?.channelId || 'unknown'}, not authorized channel ${channel.id}.`);
+            }
+
+            const update = buildYouTubeStatusUpdate(video, options.privacy);
+            const targetPrivacy = update.status.privacyStatus;
+            if (targetPrivacy !== 'private' && !options.confirmRelease) {
+                throw new Error('Unlisted/public visibility changes require --confirm-release after the account owner approves the exact release.');
+            }
+            if (options.dryRun) {
+                console.log(JSON.stringify({
+                    dryRun: true,
+                    videoId,
+                    title: video.snippet?.title || '',
+                    channel,
+                    currentPrivacy: video.status.privacyStatus,
+                    update,
+                }, null, 2));
+                return;
+            }
+            if (video.status.privacyStatus !== targetPrivacy) {
+                await client.updateVideoStatus(update);
+            }
+
+            const verified = await client.fetchVideo(videoId, { part: 'snippet,status' });
+            if (verified?.status?.privacyStatus !== targetPrivacy) {
+                throw new Error(`YouTube visibility verification failed: expected ${targetPrivacy}, got ${verified?.status?.privacyStatus || 'unknown'}.`);
+            }
+            console.log(JSON.stringify({
+                videoId,
+                url: `https://www.youtube.com/watch?v=${videoId}`,
+                title: verified.snippet?.title || '',
+                channelId: verified.snippet?.channelId || '',
+                previousPrivacy: video.status.privacyStatus,
+                privacy: verified.status.privacyStatus,
+                changed: video.status.privacyStatus !== verified.status.privacyStatus,
+            }, null, 2));
+        } catch (error) {
+            const scopeHint = /insufficient authentication scopes/i.test(error.message)
+                ? ' Run "node src/cli.js oauth-login" once to grant the default youtube.force-ssl scope.'
+                : '';
+            console.error(`Error: ${error.message}${scopeHint}`);
             process.exit(1);
         }
     });

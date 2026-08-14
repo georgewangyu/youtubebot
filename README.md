@@ -78,7 +78,8 @@ node src/cli.js env
 
 ### OAuth For Account Actions
 
-OAuth is required for account-backed actions such as uploads. Add:
+OAuth is required for account-backed actions such as uploads and visibility
+changes. Add:
 
 ```env
 YOUTUBE_CLIENT_ID=...
@@ -106,9 +107,10 @@ Verify the authenticated channel:
 node src/cli.js me
 ```
 
-If the saved refresh token is invalid, use the guided browser flow. It opens
-Google authorization with both readonly and upload scopes, accepts the callback
-URL or code, and saves tokens without printing them:
+If the saved refresh token is invalid or predates the visibility command, use
+the guided browser flow. It opens Google authorization with readonly, upload,
+and `youtube.force-ssl` scopes, accepts the callback URL or code, and saves
+tokens without printing them:
 
 ```bash
 node src/cli.js oauth-login
@@ -161,6 +163,27 @@ Google restricts uploads from unverified API projects created after July 28,
 2020 to private viewing until the project passes a YouTube API compliance
 audit. The browser/YouTube Studio remains the practical fallback for native
 finishing or public release when that restriction applies.
+
+## Changing Video Visibility
+
+Preview a visibility update without changing YouTube:
+
+```bash
+node src/cli.js set-visibility VIDEO_ID --privacy public --confirm-release --dry-run
+```
+
+Publish an already uploaded private video after the account owner approves the
+exact release:
+
+```bash
+node src/cli.js set-visibility VIDEO_ID --privacy public --confirm-release
+```
+
+The command uses the YouTube Data API `videos.update` endpoint. It verifies the
+OAuth-authorized channel owns the video, preserves mutable status fields,
+requires `--confirm-release` for public or unlisted changes, and reads the video
+back before reporting success. If an older refresh token lacks
+`youtube.force-ssl`, run `oauth-login` once and retry.
 
 ## Usage
 

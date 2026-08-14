@@ -19,6 +19,8 @@ test('buildAuthorizationUrl includes offline upload consent params', () => {
     assert.equal(state, 'state-123');
     assert.deepEqual(scopes, DEFAULT_SCOPES);
     assert.match(parsed.searchParams.get('scope'), /youtube\.upload/);
+    assert.match(parsed.searchParams.get('scope'), /youtube\.force-ssl/);
+    assert.equal(parsed.searchParams.get('include_granted_scopes'), 'true');
 });
 
 test('parseOAuthCallbackInput accepts callback URLs and raw codes', () => {
