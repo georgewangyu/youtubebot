@@ -23,3 +23,21 @@ export function buildYouTubeStatusUpdate(video, privacy) {
 
     return { id: video.id, status };
 }
+
+export async function waitForYouTubePrivacy({
+    client,
+    videoId,
+    privacy,
+    attempts = 5,
+    delayMs = 500,
+    sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+}) {
+    const expected = normalizeYouTubePrivacy(privacy);
+    let video = null;
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        video = await client.fetchVideo(videoId, { part: 'snippet,status' });
+        if (video?.status?.privacyStatus === expected) return video;
+        if (attempt < attempts) await sleep(delayMs * attempt);
+    }
+    throw new Error(`YouTube visibility verification failed: expected ${expected}, got ${video?.status?.privacyStatus || 'unknown'}.`);
+}

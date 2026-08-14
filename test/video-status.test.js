@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildYouTubeStatusUpdate } from '../src/video-status.js';
+import { buildYouTubeStatusUpdate, waitForYouTubePrivacy } from '../src/video-status.js';
 import { YouTubeClient } from '../src/youtube.js';
 
 test('buildYouTubeStatusUpdate preserves mutable status fields without read-only fields', () => {
@@ -61,4 +61,38 @@ test('YouTubeClient issues videos.update as an authenticated PUT and can verify 
     assert.equal(requests[0].options.method, 'PUT');
     assert.equal(requests[0].options.headers.Authorization, 'Bearer access-token');
     assert.deepEqual(JSON.parse(requests[0].options.body), resource);
+});
+
+test('waitForYouTubePrivacy tolerates a stale read after an update', async () => {
+    const reads = ['private', 'private', 'public'];
+    const sleeps = [];
+    const video = await waitForYouTubePrivacy({
+        client: {
+            fetchVideo: async () => ({
+                id: 'video-123',
+                status: { privacyStatus: reads.shift() },
+            }),
+        },
+        videoId: 'video-123',
+        privacy: 'public',
+        attempts: 5,
+        delayMs: 10,
+        sleep: async (milliseconds) => sleeps.push(milliseconds),
+    });
+
+    assert.equal(video.status.privacyStatus, 'public');
+    assert.deepEqual(sleeps, [10, 20]);
+});
+
+test('waitForYouTubePrivacy fails after its bounded verification window', async () => {
+    await assert.rejects(() => waitForYouTubePrivacy({
+        client: {
+            fetchVideo: async () => ({ id: 'video-123', status: { privacyStatus: 'private' } }),
+        },
+        videoId: 'video-123',
+        privacy: 'public',
+        attempts: 2,
+        delayMs: 1,
+        sleep: async () => {},
+    }), /expected public, got private/);
 });

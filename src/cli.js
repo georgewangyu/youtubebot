@@ -10,7 +10,7 @@ import { findOutliers } from './finder.js';
 import { buildAuthorizationUrl, DEFAULT_SCOPES, exchangeCodeForToken, parseOAuthCallbackInput, refreshAccessToken } from './oauth.js';
 import { printResults } from './output.js';
 import { buildYouTubeVideoResource, inspectYouTubeVideoFile, uploadYouTubeVideo } from './upload.js';
-import { buildYouTubeStatusUpdate } from './video-status.js';
+import { buildYouTubeStatusUpdate, waitForYouTubePrivacy } from './video-status.js';
 import { YouTubeClient } from './youtube.js';
 
 const program = new Command();
@@ -357,10 +357,7 @@ program
                 await client.updateVideoStatus(update);
             }
 
-            const verified = await client.fetchVideo(videoId, { part: 'snippet,status' });
-            if (verified?.status?.privacyStatus !== targetPrivacy) {
-                throw new Error(`YouTube visibility verification failed: expected ${targetPrivacy}, got ${verified?.status?.privacyStatus || 'unknown'}.`);
-            }
+            const verified = await waitForYouTubePrivacy({ client, videoId, privacy: targetPrivacy });
             console.log(JSON.stringify({
                 videoId,
                 url: `https://www.youtube.com/watch?v=${videoId}`,

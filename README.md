@@ -182,7 +182,7 @@ node src/cli.js set-visibility VIDEO_ID --privacy public --confirm-release
 The command uses the YouTube Data API `videos.update` endpoint. It verifies the
 OAuth-authorized channel owns the video, preserves mutable status fields,
 requires `--confirm-release` for public or unlisted changes, and reads the video
-back before reporting success. If an older refresh token lacks
+back with bounded retries before reporting success. If an older refresh token lacks
 `youtube.force-ssl`, run `oauth-login` once and retry.
 
 ## Usage
