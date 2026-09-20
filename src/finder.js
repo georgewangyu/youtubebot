@@ -20,6 +20,11 @@ function matchesDuration(video, contentType) {
     return true;
 }
 
+function matchesBaselineFormat(upload, target) {
+    if (!Number.isFinite(target.durationSeconds) || !Number.isFinite(upload.durationSeconds)) return false;
+    return (upload.durationSeconds <= 90) === (target.durationSeconds <= 90);
+}
+
 function sortResults(results, sort) {
     const key = sort || 'score';
     return results.sort((a, b) => {
@@ -92,7 +97,7 @@ export async function findOutliers(options) {
         }
 
         const baselineVideos = channelUploads
-            .filter((item) => item.id !== video.id)
+            .filter((item) => item.id !== video.id && matchesBaselineFormat(item, video))
             .slice(0, options.baselineVideos);
         const hasEnoughBaseline = baselineVideos.length >= options.minBaselineVideos;
         const baselineViews = hasEnoughBaseline ? computeBaseline(baselineVideos, options.baselineMethod) : null;
